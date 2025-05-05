@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Gas Detector Dashboard</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      background: #fff0f5;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      color: #cc3366;
+    }
+    .sensor {
+      font-size: 22px;
+      margin: 15px 0;
+    }
+    .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💨 Smart Gas Detector</h1>
+
+  <div class="sensor">🔥 Gas: <span id="gas">--</span></div>
+  <div class="sensor">🌡 Temp: <span id="temp">--</span> °C</div>
+  <div class="sensor">💧 Humidity: <span id="humidity">--</span> %</div>
+
+  <br />
+  <button class="btn" onclick="sendBuzzer('on')">🔔 Turn ON Buzzer</button>
+  <button class="btn" onclick="sendBuzzer('off')">🔕 Turn OFF Buzzer</button>
+
+  <script>
+    const options = {
+      clean: true,
+      connectTimeout: 4000,
+      clientId: 'webClient_' + Math.random().toString(16).substr(2, 8),
+    };
+
+    const connectUrl = 'ws://broker.hivemq.com:8000/mqtt';
+    const client = mqtt.connect(connectUrl, options);
+
+    client.on('connect', () => {
+      console.log('✅ Connected to MQTT broker');
+      client.subscribe('iot/sensor/gas');
+      client.subscribe('iot/sensor/temp');
+      client.subscribe('iot/sensor/humidity');
+    });
+
+    client.on('message', (topic, message) => {
+      const data = message.toString();
+      if (topic === 'iot/sensor/gas') {
+        document.getElementById('gas').innerText = data;
+      } else if (topic === 'iot/sensor/temp') {
+        document.getElementById('temp').innerText = data;
+      } else if (topic === 'iot/sensor/humidity') {
+        document.getElementById('humidity').innerText = data;
+      }
+    });
+
+    function sendBuzzer(state) {
+      client.publish('iot/control/buzzer', state);
+    }
+  </script>
+
+</body>
+</html>
